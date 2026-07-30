@@ -1,7 +1,45 @@
 import os
+from types import NoneType
 import h5py
 import numpy as np
 import pandas as pd 
+
+
+def save_single_batch(
+    file_path,
+    photon_steps,
+
+    attributes: dict|NoneType = None,       # attributes to be written to the root group of the batch file
+    save_n_tracks: int|NoneType = None,     # number of tracks to save
+    save_flags: bool = False,               # save photons.flags array
+    save_last_hit_triangles: bool = False   # save photons.last_hit_triangles array
+    ):
+    # note that this includes the initial step
+    number_of_steps = len(photon_steps)
+    
+
+    with h5py.File(file_path, 'w') as file:
+
+        # write attributes as attributes
+        if attributes is not None:
+            file.attrs.update(attributes)
+        
+        # step is a single Chroma Photon Object
+        for step_number, step_photons in enumerate(photon_steps):
+
+            step_group = File.create_group(f'step_{step_number}')
+            
+            if save_n_tracks is not None:
+                pos = step_photons.pos[:]
+
+        
+        
+
+
+
+
+
+    pass
 
 
 
@@ -9,10 +47,7 @@ import pandas as pd
 def make_HDF5_file(
     file_path, 
     attributes:dict,
-
-
     tracks_shape,    # The shape of the tracks dataset, in standard numpy notation.
-
     hist_rows:int,
     # and the tallies columns
     hist_columns
@@ -46,8 +81,6 @@ def make_HDF5_file(
         hist_columns = list(hist_columns.keys())
     
     # make the tallies column names into a structured dtype with columns as bools
-
-
 
     tallies_dtype = np.dtype([(name, 'i') for name in hist_columns])
 
