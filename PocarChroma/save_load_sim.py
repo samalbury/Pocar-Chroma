@@ -9,14 +9,42 @@ def save_single_batch(
     file_path,
     photon_steps,
 
+    overwrite: bool = False,
     attributes: dict|NoneType = None,       # attributes to be written to the root group of the batch file
     save_n_tracks: int|NoneType = None,     # number of tracks to save
     save_flags: bool = False,               # save photons.flags array
-    save_last_hit_triangles: bool = False   # save photons.last_hit_triangles array
+    save_last_hit_triangles: bool = False,  # save photons.last_hit_triangles array
+    only_save_track_flags: bool = False,    # save only the flags and triangles that correspond to the tracks
     ):
+    ''' Writes a single batch of photons to HDF5 files
+
+    Args:
+        file_path: the file path to write to
+        photon_steps: the photon_steps array as returned by propagate()
+        overwrite: if set will delete anything at file_path before writing
+        attributes: a dict to be written to the HDF5 root attributes 
+        save_n_tracks: if passed an int, will save that number of tracks
+        save_flags: if set will save interaction flags
+        save_last_hit_triangles: if set will save last_hit_triangles
+        only_save_track_flags: if set will only save the flags and last_hit_triangles that correspond to saved tracks
+    
+    Returns:
+        None
+
+    '''
+
+    if overwrite:
+        os.remove(file_path)
+
     # note that this includes the initial step
     number_of_steps = len(photon_steps)
     
+    if only_save_track_flags:
+        save_n_flags = save_n_tracks
+    else:
+        # when list slicing, passing none as end will return entire list 
+        save_n_flags = None 
+
 
     with h5py.File(file_path, 'w') as file:
 
@@ -30,16 +58,19 @@ def save_single_batch(
             step_group = File.create_group(f'step_{step_number}')
             
             if save_n_tracks is not None:
-                pos = step_photons.pos[:]
-
-        
-        
-
-
-
-
-
-    pass
+                pos = step_photons.pos[:save_n_tracks]
+                step_group.create_dataset('pos', data=pos, dtype='f')
+            
+            if save_flags:
+                flags = step_photons.flags[:save_n_flags]
+                # If we wind up with storage problems, consider shortening the dtype to int16
+                step_group.create_dataset('flags', data=flags, dtype=np.int32) 
+            
+            if save_last_hit_triangles:
+                triangles = step_photons.last_hit_triangles[:save_n_flags]
+                step_group.create_dataset('triangles', data=triangles, dtype=np.int32) 
+    
+    return
 
 
 
