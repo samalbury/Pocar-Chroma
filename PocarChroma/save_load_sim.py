@@ -1,5 +1,5 @@
 import os
-from types import NoneType
+from typing import Optional, Union
 import h5py
 import numpy as np
 import pandas as pd 
@@ -9,12 +9,12 @@ def save_single_batch(
     file_path,
     photon_steps,
 
-    overwrite: bool = False,
-    attributes: dict|NoneType = None,       # attributes to be written to the root group of the batch file
-    save_n_tracks: int|NoneType = None,     # number of tracks to save
+    attributes: Optional[dict] = None,       # attributes to be written to the root group of the batch file
+    save_n_tracks: Optional[int] = None,     # number of tracks to save
     save_flags: bool = False,               # save photons.flags array
     save_last_hit_triangles: bool = False,  # save photons.last_hit_triangles array
     only_save_track_flags: bool = False,    # save only the flags and triangles that correspond to the tracks
+    photon_dict: Optional[dict] = None,
     ):
     ''' Writes a single batch of photons to HDF5 files
 
@@ -26,15 +26,19 @@ def save_single_batch(
         save_n_tracks: if passed an int, will save that number of tracks
         save_flags: if set will save interaction flags
         save_last_hit_triangles: if set will save last_hit_triangles
-        only_save_track_flags: if set will only save the flags and last_hit_triangles that correspond to saved tracks
+        only_save_track_flags: 
+            if set will only save the flags and 
+            last_hit_triangles that correspond to saved tracks 
+        photon_dict: 
+            Dictionary in the form {'photon_set_title': (photon_set)}. If provided, 
+            this will save one photon dataset for each entry in the dictionary. 
+            The maximum number of tracks is save_n_tracks. Note that this is 
+            Incompatible with only_save_track_flags
     
     Returns:
         None
-
     '''
 
-    if overwrite:
-        os.remove(file_path)
 
     # note that this includes the initial step
     number_of_steps = len(photon_steps)
@@ -55,7 +59,7 @@ def save_single_batch(
         # step is a single Chroma Photon Object
         for step_number, step_photons in enumerate(photon_steps):
 
-            step_group = File.create_group(f'step_{step_number}')
+            step_group = file.create_group(f'step_{step_number}')
             
             if save_n_tracks is not None:
                 pos = step_photons.pos[:save_n_tracks]
@@ -304,7 +308,7 @@ def create_empty_csv(
 
 
 def csv_append_rows(
-    data:dict | pd.DataFrame,
+    data:Union[dict, pd.DataFrame],
     csv_path:str
 ):
     if isinstance(data, dict):
